@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Random Chemical Laboratory...</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧪</text></svg>">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --wood: #4e342e; --wood-trim: #795548; --ink: #2b2d42; --danger: #ff4757; --accent: #6c5ce7; --gold: #ffd700; }
+
+        body {
+            margin: 0; min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4, #a1c4fd, #ffd1ff);
+            background-size: 400% 400%;
+            animation: fluidMotion 10s ease infinite;
+            padding: 20px; box-sizing: border-box; overflow: hidden;
+        }
+
+        @keyframes fluidMotion { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        .sparkle {
+            position: absolute; pointer-events: none;
+            background: var(--gold);
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            animation: fly-out 1s forwards ease-out;
+            z-index: 10;
+        }
+        @keyframes fly-out {
+            0% { transform: translate(0, 0) scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(1) rotate(180deg); opacity: 0; }
+        }
+
+        #catalog-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); backdrop-filter: blur(10px);
+            display: none; align-items: center; justify-content: center; z-index: 200;
+        }
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 35px;
+            max-width: 450px; width: 90%; max-height: 75vh; overflow-y: auto;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3); border: 3px solid white; text-align: center;
+        }
+        .modal-content h3 { margin-top: 0; color: var(--accent); font-size: 26px; font-weight: 700; }
+        .reagent-item { 
+            display: flex; align-items: center; gap: 15px; padding: 10px 15px;
+            margin: 6px 0; background: white; border-radius: 15px;
+            font-family: 'Space Mono', monospace; font-size: 13px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .color-dot { width: 15px; height: 15px; border-radius: 50%; }
+        .close-modal {
+            margin-top: 20px; background: var(--accent); color: white;
+            border: none; padding: 12px 30px; border-radius: 20px; cursor: pointer;
+            font-weight: bold; font-family: 'Quicksand'; font-size: 16px;
+        }
+
+        #boom-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #ff4757, #ff6b81, transparent);
+            opacity: 0; pointer-events: none; z-index: 99; transition: 0.3s;
+        }
+        .main-container {
+            display: flex; flex-direction: row; gap: 20px; padding: 30px;
+            background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(25px);
+            border-radius: 40px; border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.1);
+            max-width: 1000px; width: 100%; position: relative;
+        }
+        .beaker-zone { flex: 0 0 300px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .cabinet-box { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .beaker {
+            width: 130px; height: 170px; border: 4px solid var(--ink);
+            border-radius: 0 0 50px 50px; position: relative;
+            background: rgba(255, 255, 255, 0.7); overflow: hidden;
+        }
+        .liquid { position: absolute; bottom: 0; width: 100%; height: 0%; transition: all 0.7s ease; z-index: 2; }
+        .bubble {
+            position: absolute; background: rgba(255,255,255,0.4); border-radius: 50%;
+            bottom: 0; animation: rise 2s infinite ease-in; z-index: 3;
+        }
+        @keyframes rise { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(-130px) scale(1.2); opacity: 0; } }
+
+        #smoke-container { position: absolute; top: -50px; width: 100%; height: 50px; pointer-events: none; }
+        .smoke-puff { position: absolute; width: 30px; height: 30px; background: rgba(100,100,100,0.6); border-radius: 50%; filter: blur(10px); animation: drift 3s forwards; }
+        @keyframes drift { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-100px) scale(3); } }
+
+        .cabinet {
+            width: 100%; height: 260px; background: var(--wood);
+            border: 8px solid var(--wood-trim); border-radius: 20px; padding: 20px;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.8); display: flex; align-items: center; box-sizing: border-box;
+        }
+        .scroll-rack { display: flex; flex-direction: row; gap: 15px; overflow-x: auto; width: 100%; padding: 10px 5px 25px 5px; align-items: flex-end; }
+        .tube {
+            flex: 0 0 65px; height: 160px; border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 0 0 30px 30px; cursor: pointer; position: relative;
+            background: rgba(255,255,255,0.1); display: flex; align-items: flex-end; 
+            overflow: hidden; transition: 0.3s;
+        }
+        .tube:hover { transform: translateY(-10px); border-color: white; }
+        .id-label {
+            position: absolute; top: 10px; width: 100%; text-align: center;
+            color: white; font-weight: bold; font-family: 'Space Mono', monospace;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8); font-size: 14px; z-index: 5;
+        }
+        .terminal-box { width: 100%; height: 140px; background: rgba(255, 255, 255, 0.9); border-radius: 15px; border: 2px solid var(--ink); box-sizing: border-box; overflow-y: auto; }
+        #msg { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--ink); padding: 15px; text-align: center; white-space: pre-line; }
+        .danger-text { color: var(--danger) !important; font-weight: bold; animation: textShake 0.1s infinite; display: inline-block; }
+        @keyframes textShake { 0%{transform:translateX(1px)} 100%{transform:translateX(-1px)} }
+        .btn-group { display: flex; gap: 8px; margin-top: 5px; }
+        button { font-family: 'Space Mono', monospace; background: var(--ink); color: white; border: none; padding: 10px 14px; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+        .lock-btn { background: #00b894; font-weight: bold; }
+        .view-btn { background: var(--accent); font-size: 18px; padding: 5px 12px; }
+        .shaking { animation: shake 0.1s infinite; }
+        @keyframes shake { 0% { transform: translate(4px, 4px) rotate(0deg); } 50% { transform: translate(-4px, -3px) rotate(1deg); } 100% { transform: translate(2px, 3px) rotate(-1deg); } }
+        .fire-flash { box-shadow: 0 0 50px #ff4757 !important; }
+    </style>
+</head>
+<body>
+
+    <div id="catalog-modal">
+        <div class="modal-content">
+            <h3>🧪 Reagent Catalog</h3>
+            <div id="reagent-list"></div>
+            <button class="close-modal" onclick="closeCatalog()">Close Catalog</button>
+        </div>
+    </div>
+
+    <div id="boom-overlay"></div>
+
+    <div class="main-container" id="shaker">
+        <div class="beaker-zone">
+            <h2>[OUTPUT]</h2>
+            <div class="beaker" id="beaker-box">
+                <div id="smoke-container"></div>
+                <div class="liquid" id="fill"></div>
+                <div id="bubble-wrap"></div>
+            </div>
+            <div class="terminal-box" id="terminal">
+                <div id="msg">LAB READY. MIX WITH CAUTION...</div>
+            </div>
+            <div class="btn-group">
+                <button onclick="resetLab('flush')">FLUSH</button>
+                <button class="view-btn" onclick="openCatalog()" title="Catalog">🔍</button>
+                <button class="lock-btn" onclick="lockIn()"> MIX IT! </button>
+            </div>
+        </div>
+
+        <div class="cabinet-box">
+            <h2>[REAGENTS]</h2>
+            <div class="cabinet">
+                <div class="scroll-rack" id="shelf"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(freq, type, duration, vol, ramp = true) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            if(ramp) osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + duration);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSparkleSound() {
+            playSound(800, 'sine', 0.1, 0.1, false);
+            setTimeout(() => playSound(1200, 'sine', 0.1, 0.1, false), 50);
+            setTimeout(() => playSound(1600, 'sine', 0.2, 0.1, false), 100);
+        }
+
+        function playFlushSound() {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 1.2);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1.2);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 1.2);
+        }
+
+        const reagents = [
+            {id: 'Cf', name: 'Brew-tal-Coffee', color: '#4b3832'},
+            {id: 'Ms', name: 'Matcha-Shot', color: '#8eb021'},
+            {id: 'Ch', name: 'Chismis-Acid', color: '#ff7675'},
+            {id: 'De', name: 'Delulu-Oxide', color: '#fd79a8'},
+            {id: 'Bc', name: 'Brain-Cell', color: '#55efc4'},
+            {id: 'Em', name: 'Emo-Essence', color: '#4a148c'},
+            {id: 'An', name: 'Annoying-Acid', color: '#f1c40f'},
+            {id: 'Lu', name: 'Laughtose', color: '#ffeaa7'},
+            {id: 'Sl', name: 'Sleep-Dep', color: '#a29bfe'},
+            {id: 'Cp', name: 'Couch-Potato', color: '#8d6e63'},
+            {id: 'Gh', name: 'Ghosted-Gas', color: '#dfe6e9'},
+            {id: 'Os', name: 'Over-Sharer', color: '#ff8a65'},
+            {id: 'Rb', name: 'Roast-Brom', color: '#636e72'},
+            {id: 'Vb', name: 'Vibe-Cyanide', color: '#81ecec'},
+            {id: 'Cr', name: 'Cringe-Iodine', color: '#a29bfe'}
+        ];
+
+        const duoResults = {
+            "Cf+Sl": "Coffee vs Sleep Deprivation. Coffee is winning..... for now.",
+            "Ms+Vb": "Matcha and Chill. Very demure, very mindful.",
+            "Cf+Ch": "Coffee and Chismis. Bestest combo for chika sessions--therefore, we should go to cafes more often. Even if we're broke, the tea must be spilled.",
+            "Bc+Bc": "Two brain cells working together. A *miracle!* -- but don't get used to it. The chemistry is barely holding on.",
+            "Cf+Ms": "My indecision and your... well... it created this... It's... something.",
+            "De+Sl": "So tired that you think you should shift courses, but you shall not!",
+            "An+Rb": "You're annoying. Stop hating me :(",
+            "Gh+Os": "I'm the oversharer and you're the ghoster. We don't talk, but we understand each other (I think).",
+            "Lu+Rb": "Everything is funny when I'm being mean to you <3",
+            "Vb+Cp": "This so you--when there's no exams of course. Wish you could be more chill again..."
+        };
+
+        const secretTrios = {
+            "Cf+Os+Ch": "Coffee, Chismis, and Over-Sharing. You are the center of attention... as always I guess... You've basically leaked the entire government's secrets by now.",
+            "Ms+De+Em": "Matcha + Delulu + Emo. I can picture you crying about chemistry in a cute cafe while looking aesthetic.",
+            "Cf+Sl+Bc": "One coffee, one brain cell, zero sleep. Godspeed.",
+            "Bc+Bc+Bc": "3 Brain-Cells. Now THAT is a miracle. You are a genius, but don't let it get to your head... thankies.",
+            "An+Bc+Lu": "Annoying, smart, and funny. You should be the one sending me braincells, but you also send me laughs and eye-rolls. I guess that's fair...",
+            "Gh+Sl+Vb": "Ghosted, Sleep-Dep, but a Vibe. Yup, that's more you. You get it.",
+            "An+Cr+Gh": "KABOOGSH!!! 💥\n 'F**k you' I say as I get mad at you for being annoying, cringe, and ghosting me.",
+            "Ch+Ch+Ch": "KABOOGSH!!! 💥\nToo much chika! The servers are overheating. You should calm down.",
+            "Ms+Ms+Ms": "ZEN OVERLOAD: You have become one with the matcha. You are now a leaf.",
+            "Cf+Cf+Cf": "KABOOGSH!!! 💥\nThe beaker is vibrating from the caffeine! Heart rate is currently 400 BPM!",
+            "Bc+De+Em": "KABOOGSH!!! 💥\nDelulu-Emo spiral killed the brain cells.",
+            "Em+Rb+Sl": "KABOOGSH!!! 💥\nStop judging people... you are as emo and tired as them. I am people.",
+            "Cr+Cr+Os": "KABOOGSH!!! 💥\nYou overshare blackmail-worthy info. I am keeping it for future purposes.",
+            "Lu+Lu+Lu": "Laughtose Overload! We laugh too much at this point, we can't even understand each other. But it's fun, so who cares? <3"
+        };
+
+        const shelf = document.getElementById('shelf');
+        reagents.forEach(r => {
+            const div = document.createElement('div'); 
+            div.className = 'tube';
+            div.onclick = () => add(r);
+            div.innerHTML = `<div class="id-label">${r.id}</div><div style="height:75%; width:100%; background:${r.color}; opacity:0.85;"></div>`;
+            shelf.appendChild(div);
+        });
+
+        const listContainer = document.getElementById('reagent-list');
+        reagents.forEach(r => {
+            listContainer.innerHTML += `<div class="reagent-item"><div class="color-dot" style="background:${r.color}"></div><strong>${r.id}</strong>: ${r.name}</div>`;
+        });
+
+        function openCatalog() { document.getElementById('catalog-modal').style.display = 'flex'; }
+        function closeCatalog() { document.getElementById('catalog-modal').style.display = 'none'; }
+
+        function createSparkles() {
+            const container = document.getElementById('beaker-box');
+            for(let i=0; i<15; i++) {
+                const s = document.createElement('div');
+                s.className = 'sparkle';
+                const size = Math.random() * 10 + 5;
+                s.style.width = size + 'px'; s.style.height = size + 'px';
+                s.style.left = '50%'; s.style.top = '20%';
+                s.style.setProperty('--tx', (Math.random() - 0.5) * 200 + 'px');
+                s.style.setProperty('--ty', (Math.random() - 0.8) * 150 + 'px');
+                container.appendChild(s);
+                setTimeout(() => s.remove(), 1000);
+            }
+        }
+
+        let mix = [];
+        function add(r) {
+            if (mix.length < 3) {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                playSound(400 + (mix.length * 100), 'sine', 0.1, 0.2);
+                mix.push(r);
+                document.getElementById('fill').style.height = (mix.length * 33.3) + "%";
+                document.getElementById('fill').style.background = r.color;
+                document.getElementById('msg').innerText = `ADDING: ${r.name}...`;
+                createBubbles(8);
+            }
+        }
+
+        function createBubbles(count, color = "white") {
+            const wrap = document.getElementById('bubble-wrap');
+            for(let i=0; i<count; i++) {
+                const b = document.createElement('div');
+                b.className = 'bubble';
+                const size = Math.random() * 10 + 5;
+                b.style.width = size + 'px'; b.style.height = size + 'px';
+                b.style.left = Math.random() * 100 + '%';
+                wrap.appendChild(b);
+                setTimeout(() => b.remove(), 2000);
+            }
+        }
+
+        function lockIn() {
+            if (mix.length < 2) return;
+            const ids = mix.map(m => m.id).sort().join('+');
+            let result = mix.length === 2 ? duoResults[ids] : secretTrios[ids];
+            if (!result && mix.length === 3) result = "KABOOGSH!!! 💥\nUNSTABLE MIX!";
+
+            if (result && result.includes("KABOOGSH")) {
+                playSound(100, 'sawtooth', 0.8, 0.3);
+                document.getElementById('msg').innerHTML = `<span class="danger-text">${result}</span>`;
+                document.getElementById('shaker').classList.add('shaking');
+                document.getElementById('beaker-box').classList.add('fire-flash');
+                document.getElementById('boom-overlay').style.opacity = "0.6";
+                setTimeout(() => resetLab('boom'), 4500);
+            } else if (result) {
+                playSparkleSound();
+                createSparkles();
+                document.getElementById('msg').innerText = result;
+            }
+        }
+
+        function resetLab(type) {
+            if(type === 'flush') {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                playFlushSound();
+                document.getElementById('fill').style.background = "#a1c4fd";
+                createBubbles(30, "white");
+                document.getElementById('msg').innerText = "FLUSHING SYSTEM... 🫧";
+                document.getElementById('fill').style.height = "0%";
+                setTimeout(actualReset, 1200);
+            } else {
+                actualReset();
+            }
+        }
+
+        function actualReset() {
+            mix=[]; 
+            document.getElementById('fill').style.height="0%"; 
+            document.getElementById('msg').innerText="STATION RESET."; 
+            document.getElementById('shaker').classList.remove('shaking');
+            document.getElementById('beaker-box').classList.remove('fire-flash');
+            document.getElementById('boom-overlay').style.opacity = "0";
+            document.getElementById('bubble-wrap').innerHTML = "";
+        }
+    </script>
+</body>
+</html>
